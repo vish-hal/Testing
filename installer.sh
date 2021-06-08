@@ -2,28 +2,28 @@
 
 echo "checking your system and setting up the environment: "
 echo ""
-sudo apt-get -y update ;
-sudo apt-get -y upgrade ;
-sudo apt install python3;
-sudo apt-get install -y cargo; #for findomain installation
-sudo apt-get install libpcap-dev ;
-sudo apt install python3-pip;
-sudo apt install git;
-pip install jsbeautifier ; #required inlinkfinder,secretfinder etc.
-sudo snap install go ;
-echo "export GOPATH=$HOME/go " >> ~/.bashrc ;
-echo "export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin" >> ~/.bashrc;
+sudo apt-get -y update 
+sudo apt-get -y upgrade 
+sudo apt install python3
+sudo apt-get install -y cargo
+sudo apt-get install libpcap-dev 
+sudo apt install python3-pip
+sudo apt install git
+pip install jsbeautifier 
+sudo snap install go --classic 
+echo "export GOPATH=$HOME/go " >> ~/.bashrc 
+echo "export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin" >> ~/.bashrc
 echo "alias cobra='~/Cobra/Cobra.sh'" >> ~/.bashrc
 echo "alias Cobra='~/Cobra/Cobra.sh'" >> ~/.bashrc
-source ~/.bashrc;
+source ~/.bashrc
 echo "installing your assets, please wait:)"
 echo ""
 mkdir tools
-cd tools;
+cd tools
 GO111MODULE=on go get -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder; 
 GO111MODULE=on go get -v github.com/projectdiscovery/dnsx/cmd/dnsx ;
 GO111MODULE=on go get -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei;
-git clone https://github.com/projectdiscovery/nuclei-templates; 
+nuclei -ut;
 GO111MODULE=on go get -u -v github.com/projectdiscovery/httpx/cmd/httpx; 
 go get github.com/tomnomnom/hacks/waybackurls; 
 GO111MODULE=on go get -u -v github.com/lc/gau; 
@@ -54,5 +54,5 @@ mkdir Wordlists
 cd Wordlists
 git clone https://github.com/fuzz-security/SuperWordlist
 git clone https://github.com/fuzzdb-project/fuzzdb
-https://github.com/danielmiessler/SecLists
+git clone https://github.com/danielmiessler/SecLists
 echo "we are ready! lets go!!"
