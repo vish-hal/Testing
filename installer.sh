@@ -13,9 +13,8 @@ pip install jsbeautifier
 sudo snap install go --classic 
 echo "alias cobra='~/Cobra/Cobra.sh'" >> ~/.bashrc
 echo "alias Cobra='~/Cobra/Cobra.sh'" >> ~/.bashrc
-echo "" >> ~/.bashrc
-echo "export GOPATH=$HOME/go ; " >> ~/.bashrc 
-echo "export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin ;" >> ~/.bashrc
+echo 'export GOPATH=$HOME/go ; ' >> ~/.bashrc 
+echo 'export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin ;' >> ~/.bashrc
 source ~/.bashrc
 echo "installing your assets, please wait:)"
 echo ""
@@ -56,5 +55,4 @@ cd Wordlists
 git clone https://github.com/fuzz-security/SuperWordlist
 git clone https://github.com/fuzzdb-project/fuzzdb
 git clone https://github.com/danielmiessler/SecLists
-source ~/.bashrc
 echo "we are ready! lets go!!"
