@@ -55,4 +55,5 @@ cd Wordlists
 git clone https://github.com/fuzz-security/SuperWordlist
 git clone https://github.com/fuzzdb-project/fuzzdb
 git clone https://github.com/danielmiessler/SecLists
+source ~/.bashrc
 echo "we are ready! lets go!!"
