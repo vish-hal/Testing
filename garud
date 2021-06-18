@@ -1,0 +1,326 @@
+#!/bin/bash
+# coded by R0X4R
+# Contributers: KathanP19 (https://github.com/KathanP19), f8al (https://github.com/f8al), theamanrawat (https://github.com/theamanrawat), remonsec (https://github.com/remonsec), simrotion13 (https://github.com/simrotion13)
+
+wget -q --spider http://google.com
+if [ $? -ne 0 ];then
+    echo "Connect to internet before running this tool!"
+    exit 1
+fi
+
+domain=
+file=
+excl=
+thrds=
+bxssServer=
+
+load_colors() {
+    RED="\e[31m"
+    BOLD="\e[1m"
+    NORMAL="\e[0m"
+    GREEN="\e[92m"
+    YELLOW="\e[93m"
+    BLINK="\e[5m"
+}
+
+usage() {
+    load_colors
+    echo -e "${RED}\n █▀▀ ▄▀█ █▀█ █░█ █▀▄"
+    echo -e "${RED} █▄█ █▀█ █▀▄ █▄█ █▄▀"
+    echo -e "${NORMAL}${BOLD}\n coded by ${GREEN}R0X4R${NORMAL}${BOLD} in INDIA with ${RED}<3"
+    echo -e "${NORMAL}${BOLD}\n Usage: ${NORMAL}-d\t ${BOLD}target you want to scan (${YELLOW}target.com${NORMAL})"
+    echo -e "${NORMAL}${BOLD} Usage: ${NORMAL}-f\t ${BOLD}output directory where you want to save file (${YELLOW}~/target-output/${NORMAL})"
+    echo -e "${NORMAL}${BOLD} Usage: ${NORMAL}-t\t ${BOLD}Add threads to get results more faster (${YELLOW}default=100${NORMAL})"
+    echo -e "${NORMAL}${BOLD} Usage: ${NORMAL}-b\t ${BOLD}Add your xss server for Blind XSS (${YELLOW}-b test.xss.ht${NORMAL})"
+    echo -e "${NORMAL}${BOLD} Usage: ${NORMAL}-x\t ${BOLD}Exclude out of scope domains (${YELLOW}~/out-domains.txt${NORMAL})"
+    echo -e "${NORMAL}${BOLD} garud ${GREEN}-d${NORMAL} target.com ${GREEN}-f${NORMAL} target-output \n"
+    exit 1
+}
+
+while getopts ":b:d:f:h:t:x:" o; do
+    case "${o}" in
+        b)
+            bxssServer=${OPTARG} ;;
+
+        d)
+            domain=${OPTARG} ;;
+
+        f)
+            file=${OPTARG} ;;
+
+        h)
+            usage ;;
+
+        t)
+            thrds=${OPTARG} ;;
+
+        x)
+            excl=${OPTARG} ;;
+
+        *)
+            usage ;;
+
+    esac
+done
+
+if [ -z "$domain" ]
+  then
+    load_colors
+    echo -e "${RED}\n █▀▀ ▄▀█ █▀█ █░█ █▀▄"
+    echo -e "${RED} █▄█ █▀█ █▀▄ █▄█ █▄▀"
+    echo -e "${NORMAL}${BOLD}\n coded by ${GREEN}R0X4R${NORMAL}${BOLD} in INDIA with ${RED}<3"
+    echo -e "${NORMAL}${BOLD}${RED}${BLINK}\n ● Error target not supplied. ${NORMAL}"
+    echo -e "${NORMAL}${BOLD}\n Usage: ${NORMAL}-d\t ${BOLD}target you want to scan (${YELLOW}target.com${NORMAL})"
+    echo -e "${NORMAL}${BOLD} Usage: ${NORMAL}-f\t ${BOLD}output directory where you want to save file (${YELLOW}~/target-output/${NORMAL})"
+    echo -e "${NORMAL}${BOLD} garud ${GREEN}-d${NORMAL} target.com ${GREEN}-f${NORMAL} target-output \n"
+    exit 1
+fi
+
+if [ -z "$file" ]
+  then
+    load_colors
+    echo -e "${RED}\n █▀▀ ▄▀█ █▀█ █░█ █▀▄"
+    echo -e "${RED} █▄█ █▀█ █▀▄ █▄█ █▄▀"
+    echo -e "${NORMAL}${BOLD}\n coded by ${GREEN}R0X4R${NORMAL}${BOLD} in INDIA with ${RED}<3"
+    echo -e "${NORMAL}${BOLD}${RED}${BLINK}\n ● Error output directory not supplied. ${NORMAL}"
+    echo -e "${NORMAL}${BOLD}\n Usage: ${NORMAL}-d\t ${BOLD}target you want to scan (${YELLOW}target.com${NORMAL})"
+    echo -e "${NORMAL}${BOLD} Usage: ${NORMAL}-f\t ${BOLD}output directory where you want to save file (${YELLOW}~/target-output/${NORMAL})"
+    echo -e "${NORMAL}${BOLD} garud ${GREEN}-d${NORMAL} target.com ${GREEN}-f${NORMAL} target-output \n"
+    exit 1
+fi
+
+if [ -z "$thrds" ]
+    then
+    thrds=100
+fi
+
+if [ ! -d "$file" ]; then
+    mkdir $file
+fi
+
+cd $file/
+
+show_logo() {
+	clear
+
+    echo -e ${GREEN}"""\n	
+          .                                                      .
+        .n                   .                 .                  n.
+  .   .dP                  dP                   9b                 9b.    .
+ 4    qXb         .       dX                     Xb       .        dXp     t
+dX.    9Xb      .dXb    __                         __    dXb.     dXP     .Xb
+9XXb._       _.dXXXXb dXXXXbo.                 .odXXXXb dXXXXb._       _.dXXP
+ 9XXXXXXXXXXXXXXXXXXXVXXXXXXXXOo.           .oOXXXXXXXXVXXXXXXXXXXXXXXXXXXXP
+  v9XXXXXXXXXXXXXXXXXXXXXi-   -vOOO8b   d8OOOi-   -vXXXXXXXXXXXXXXXXXXXXXPi
+    v9XXXXXXXXXXXPi v9XXi   DIE    v98v8Pi  HUMAN   vXXPi v9XXXXXXXXXXXPi
+        -------       9X.          .db|db.          .XP       -------
+                        )b.  .dbo.dPivviv9b.odb.  .dX(
+                      ,dXXXXXXXXXXXb     dXXXXXXXXXXXb.
+                     dXXXXXXXXXXXPi   .   v9XXXXXXXXXXXb
+                    dXXXXXXXXXXXXb   d|b   dXXXXXXXXXXXXb
+                    9XXbi   vXXXXXb.dX|Xb.dXXXXXi   vdXXP
+                     vi      9XXXXXX(   )XXXXXXP      vi
+                              XXXX X.vvi.X XXXX
+                              XP^Xivb   divX^XX
+                              X. 9  v   i  P )X
+                              vb  v       i  di
+                               v             i """
+
+    echo -e "${RED}\n                             █▀▀ ▄▀█ █▀█ █░█ █▀▄"
+    echo -e "${RED}                             █▄█ █▀█ █▀▄ █▄█ █▄▀"
+    echo -e "${NORMAL}${BOLD}\n                        coded by ${GREEN}R0X4R${NORMAL}${BOLD} in INDIA with ${RED}<3"
+    sleep 1
+}
+
+scan_targets() {
+    echo -e "${NORMAL}${BOLD}\n\n Target: ${RED}$domain${NORMAL}"
+    echo -e "${NORMAL}${BOLD} Output: ${GREEN}$(pwd)${NORMAL}"
+    echo -e "${NORMAL}${BOLD} Threads: ${GREEN}$thrds${NORMAL}"
+}
+
+makeFolders() {
+    mkdir domains/
+    mkdir domains/info/
+    mkdir parameters/
+    mkdir parameters/patterns/
+    mkdir scanresults/
+    mkdir scanresults/xss/
+    mkdir scanresults/nuclei/
+    mkdir scanresults/crlf/
+    mkdir scanresults/sqli/
+    mkdir scanresults/lfi/
+    mkdir scanresults/ssti/
+    mkdir scanresults/mail/
+    mkdir scanresults/files/
+    mkdir scanresults/smuggle/
+    mkdir scanresults/redirect/
+}
+
+run_subenum() {
+    echo -ne "${NORMAL}${BOLD}${YELLOW}\n ● Scanning is in progress:${NORMAL}${BOLD} Scanning subdomains of $domain [${GREEN}${BLINK}20%${NORMAL}] \r"
+    assetfinder --subs-only $domain | anew -q domains/assetfinder.txt &> /dev/null
+    python3 ~/tools/Sublist3r/sublist3r.py -d $domain -o domains/sublister.txt &> /dev/null
+    subfinder -silent -d $domain -all -t $thrds -o domains/subfinder.txt > /dev/null
+    amass enum -passive -norecursive -noalts -d $domain -o domains/amass.txt &> /dev/null
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Filtering subdomains of $domain [${GREEN}${BLINK}30%${NORMAL}] \r"
+    sleep 1s
+    if [ -f "$excl" ]
+        then
+            cat domains/*.txt | grep -v "*" | grep -vf $excl | sort -u | sed '/@/d' | sed '/<BR>/d' | sed '/\_/d'| sed '/*/d' | dnsx -t 100 -silent | anew -q domains/finalsubdomains.txt &> /dev/null
+        else
+            cat domains/*.txt | grep -v "*" | sort -u | sed '/@/d' | sed '/<BR>/d' | sed '/\_/d'| sed '/*/d' | dnsx -t 100 -silent | anew -q domains/finalsubdomains.txt &> /dev/null
+    fi
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Filtering valid subdomains of $domain [${GREEN}${BLINK}35%${NORMAL}] \r"
+    sleep 1s
+    cat domains/finalsubdomains.txt | sort -u | uniq -u | httpx -threads $thrds -tls-probe -csp-probe -silent | anew -q domains/aliveDomains.txt &> /dev/null
+    cat domains/aliveDomains.txt | sed -E 's/^\s*.*:\/\///g' | anew -q domains/hosts.txt &> /dev/null
+
+}
+
+run_info() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Fetching some imformations of valid subdomains of $domain [${GREEN}${BLINK}40%${NORMAL}] \r"
+    cat domains/aliveDomains.txt | httpx -threads $thrds -status-code -title -silent | anew -q domains/info/titles.txt
+    cat domains/aliveDomains.txt | aquatone -chrome-path /snap/bin/chromium -out domains/info/aquatone_output/ -threads 10 -silent &> /dev/null
+}
+
+run_params() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Getting all parameters of $domain [${GREEN}${BLINK}70%${NORMAL}] \r"
+    cat domains/aliveDomains.txt | xargs -P 50 -I % bash -c "echo % | waybackurls" 2> /dev/null | anew -q parameters/wayback.txt &> /dev/null
+    cat domains/aliveDomains.txt | gauplus --random-agent -b eot,jpg,jpeg,gif,css,tif,tiff,png,ttf,otf,woff,woff2,ico,pdf,svg,txt,js -t $thrds -o parameters/gauplus.txt &> /dev/null
+    cat parameters/*.txt | urldedupe -s | anew -q parameters/allParameters.txt &> /dev/null
+}
+
+run_gf() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Filtering all parameters of $domain [${GREEN}${BLINK}75%${NORMAL}] \r"
+    cat parameters/allParameters.txt | gf xss | sed 's/=.*/=/' | sed 's/URL: //' | sed "s/'/ /g" | sed "s/(/ /g" | sed "s/)/ /g" | qsreplace "FUZZ" | anew -q parameters/patterns/xss.txt
+    cat parameters/allParameters.txt | gf ssrf | sed "s/'/ /g" | sed "s/(/ /g" | sed "s/)/ /g" | qsreplace "FUZZ" | anew -q parameters/patterns/ssrf.txt
+    cat parameters/allParameters.txt | gf ssti | sed "s/'/ /g" | sed "s/(/ /g" | sed "s/)/ /g" | qsreplace "FUZZ" | anew -q parameters/patterns/ssti.txt
+    cat parameters/allParameters.txt | gf redirect | sed "s/'/ /g" | sed "s/(/ /g" | sed "s/)/ /g" | qsreplace "FUZZ" | anew -q parameters/patterns/redirect.txt
+    cat parameters/allParameters.txt | gf sqli | sed "s/'/ /g" | sed "s/(/ /g" | sed "s/)/ /g" | qsreplace "FUZZ" | anew -q parameters/patterns/sqli.txt
+    cat parameters/allParameters.txt | gf lfi | sed "s/'/ /g" | sed "s/(/ /g" | sed "s/)/ /g" | qsreplace "FUZZ" | anew -q parameters/patterns/lfi.txt
+    cat parameters/allParameters.txt | gf rce | sed "s/'/ /g" | sed "s/(/ /g" | sed "s/)/ /g" | qsreplace "FUZZ" | anew -q parameters/patterns/rce.txt
+}
+
+check_crlf() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Checking for crlf in $domain [${GREEN}${BLINK}85%${NORMAL}] \r"
+    crlfuzz -l domains/aliveDomains.txt -c $thrds -s | anew scanresults/crlf/output.txt | notify -silent &> /dev/null
+}
+
+check_mail() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Checking for email spoofing errors in $domain [${GREEN}${BLINK}86%${NORMAL}] \r"
+    for target in $(echo "$domain"); do if [[ $(curl --connect-timeout 3 -kls --max-time 3 -d "serial=fred12&domain=${target}" -H "Content-Type: application/x-www-form-urlencoded" -X POST "https://www.kitterman.com/spf/getspf3.py") =~ 'SPF record passed validation test with pySPF' ]]; then echo -e "VULNERABLE: ${target}"; else echo -e "NOT VULNERABLE: ${target}"; fi done | anew scanresults/mail/spf.txt | notify -silent &> /dev/null
+    for target in $(echo "$domain"); do if [[ $(curl --connect-timeout 3 -kls --max-time 3 -X GET "https://dmarcly.com/server/dmarc_check.php?domain=${target}") =~ 'success' ]]; then echo -e "VULNERABLE: ${target}"; else echo -e "NOT VULNERABLE: ${target}"; fi done | anew scanresults/mail/email.txt | notify -silent &> /dev/null
+}
+
+check_ssti() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Checking for ssti vulnerabilities in $domain [${GREEN}${BLINK}87%${NORMAL}] \r"
+    cat ~/tools/payloads/ssti.txt | while read -r line; do cat parameters/patterns/ssti.txt | qsreplace "$line" | anew -q ssticheck.txt;done &> /dev/null
+    cat ssticheck.txt | xargs -P 100 -I host bash -c "curl -s -L 'host' | grep \"check-ssti49\" && echo -e \"[VULNERABLE] - host \n \"" 2> /dev/null | grep "VULNERABLE" | anew scanresults/ssti/output.txt | notify -silent &> /dev/null
+    rm ssticheck.txt
+}
+
+check_lfi() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Checking for lfi vulnerabilities in $domain [${GREEN}${BLINK}88%${NORMAL}] \r"
+    cat ~/tools/payloads/lfi.txt | while read -r line; do cat parameters/patterns/lfi.txt | qsreplace "$line" | anew -q lficheck.txt;done &> /dev/null
+    cat lficheck.txt | xargs -P 100 -I host bash -c "curl -s -L 'host' | grep \"root:\" && echo -e \"[VULNERABLE] - host \n \"" 2> /dev/null| grep "VULNERABLE" | anew scanresults/lfi/output.txt | notify -silent &> /dev/null
+    rm lficheck.txt
+}
+
+check_nuclei() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Scanning for vulnerabilities of $domain using nuclei [${GREEN}${BLINK}89%${NORMAL}] \r"
+    cat domains/aliveDomains.txt | while read -r line;do nuclei -t ~/nuclei-templates/ -target $line -severity low -c 500 -nc -silent;done | anew scanresults/nuclei/low.txt | notify -silent &> /dev/null
+    cat domains/aliveDomains.txt | while read -r line;do nuclei -t ~/nuclei-templates/ -target $line -severity medium -c 500 -nc -silent;done | anew scanresults/nuclei/medium.txt | notify -silent &> /dev/null
+    cat domains/aliveDomains.txt | while read -r line;do nuclei -t ~/nuclei-templates/ -target $line -severity high -c 500 -nc -silent;done | anew scanresults/nuclei/high.txt | notify -silent &> /dev/null
+    cat domains/aliveDomains.txt | while read -r line;do nuclei -t ~/nuclei-templates/ -target $line -severity critical -c 500 -nc -silent;done | anew scanresults/nuclei/critical.txt | notify -silent &> /dev/null
+}
+
+check_infoleak() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Scanning for directories and sensitive files of $domain [${GREEN}${BLINK}90%${NORMAL}] \r"
+    cat parameters/allParameters.txt | cut -d"?" -f1 | cut -d"=" -f1 | anew -q removed.txt &> /dev/null
+    cat removed.txt | grep -iaE "([^.]+)\.zip$|([^.]+)\.zip\.[0-9]+$|([^.]+)\.zip[0-9]+$|([^.]+)\.zip[a-z][A-Z][0-9]+$|([^.]+)\.zip\.[a-z][A-Z][0-9]+$|([^.]+)\.rar$|([^.]+)\.tar$|([^.]+)\.tar\.gz$|([^.]+)\.tgz$|([^.]+)\.sql$|([^.]+)\.db$|([^.]+)\.sqlite$|([^.]+)\.pgsql\.txt$|([^.]+)\.mysql\.txt$|([^.]+)\.gz$|([^.]+)\.config$|([^.]+)\.log$|([^.]+)\.bak$|([^.]+)\.backup$|([^.]+)\.bkp$|([^.]+)\.crt$|([^.]+)\.dat$|([^.]+)\.eml$|([^.]+)\.java$|([^.]+)\.lst$|([^.]+)\.key$|([^.]+)\.passwd$|([^.]+)\.pl$|([^.]+)\.pwd$|([^.]+)\.mysql-connect$|([^.]+)\.jar$|([^.]+)\.cfg$|([^.]+)\.dir$|([^.]+)\.orig$|([^.]+)\.bz2$|([^.]+)\.old$|([^.]+)\.vbs$|([^.]+)\.img$|([^.]+)\.inf$|([^.]+)\.sh$|([^.]+)\.py$|([^.]+)\.vbproj$|([^.]+)\.mysql-pconnect$|([^.]+)\.war$|([^.]+)\.go$|([^.]+)\.psql$|([^.]+)\.sql\.gz$|([^.]+)\.vb$|([^.]+)\.webinfo$|([^.]+)\.jnlp$|([^.]+)\.cgi$|([^.]+)\.temp$|([^.]+)\.ini$|([^.]+)\.webproj$|([^.]+)\.xsql$|([^.]+)\.raw$|([^.]+)\.inc$|([^.]+)\.lck$|([^.]+)\.nz$|([^.]+)\.rc$|([^.]+)\.html\.gz$|([^.]+)\.gz$|([^.]+)\.env$|([^.]+)\.yml$" | anew scanresults/files/output.txt | notify -silent &> /dev/null
+    rm removed.txt
+}
+
+check_sqli() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Scanning for sqli vulnerabilities of $domain using sqlmap [${GREEN}${BLINK}92%${NORMAL}] \r"
+    cat parameters/patterns/sqli.txt | xargs -P 30 -I % bash -c "python3 ~/tools/sqlmap/sqlmap.py -u % -b --batch --disable-coloring --random-agent --output-dir=scanresults/sqli/ 2> /dev/null" &> /dev/null
+}
+
+check_xss() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Checking for xss in $domain [${GREEN}${BLINK}95%${NORMAL}] \r"
+    cat parameters/patterns/xss.txt | xargs -P 30 -I % bash -c "echo % | kxss" 2> /dev/null | anew -q scanresults/xss/kxss.txt &> /dev/null
+    if [ -n "$bxssServer" ]
+        then
+            dalfox file parameters/patterns/xss.txt pipe --silence --no-color --no-spinner --mass --mass-worker 100 --skip-bav -w $thrds -b $bxssServer 2> /dev/null | anew -q scanresults/xss/dalfox.txt &> /dev/null
+        else
+            dalfox file parameters/patterns/xss.txt pipe --silence --no-color --no-spinner --mass --mass-worker 100 --skip-bav -w $thrds 2> /dev/null | anew -q scanresults/xss/dalfox.txt &> /dev/null
+    fi
+}
+
+check_smuggle() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Scanning for smuggling vulnerabilities of $domain using smuggler [${GREEN}${BLINK}96%${NORMAL}] \r"
+    cat domains/aliveDomains.txt | xargs -P 100 -I % bash -c "python3 ~/tools/smuggler/smuggler.py -u '%' --quiet --log scanresults/smuggle/output.txt" &> /dev/null
+}
+
+check_open() {
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Checking for open redirection in $domain [${GREEN}${BLINK}97%${NORMAL}] \r"
+    python3 ~/tools/OpenRedireX/openredirex.py -l parameters/patterns/redirect.txt --keyword FUZZ -p ~/tools/OpenRedireX/payloads.txt | grep "^http" | anew -q scanresults/redirect/opoutput.txt &> /dev/null
+    sed -r -i "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g" scanresults/redirect/opoutput.txt &> /dev/null
+    cat parameters/patterns/redirect.txt | qsreplace 'http://www.evil.com/' | xargs -P 30 -I % bash -c "curl -s -L '%' -I | grep \"evil.com\" && echo -e \"[VULNERABLE] - % \n \"" 2> /dev/null | anew scanresults/redirect/output.txt | notify -silent &> /dev/null # this oneliner I got from Hacktify's youtube channel. Video Link: https://youtu.be/Va_TvyBjtKA
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Fuzzing for directories of $domain [${GREEN}${BLINK}98%${NORMAL}] \r"
+    interlace -tL domains/aliveDomains.txt -threads 10 -c "fuzzy _target_ ~/wordlists/big.txt" &> /dev/null
+    sleep 1s
+    echo -ne "${NORMAL}${BOLD}${YELLOW} ● Scanning is in progress:${NORMAL}${BOLD} Setting things up for $domain [${GREEN}${BLINK}100%${NORMAL}] \r"
+    sleep 1s
+    echo -ne "\n"
+    echo -e "${NORMAL}${BOLD} ● Scanning Completed. Thanks for using Garud."
+}
+
+final_bot() {
+    sleep 2s
+    echo -e "${NORMAL}${BOLD}${YELLOW}\n ●Sending Notifications.....\n"
+    echo -e "$(cat domains/finalsubdomains.txt | wc -l) subdomains found of $domain" | notify -silent &> /dev/null
+    echo -e "$(cat domains/aliveDomains.txt | wc -l) active urls found of $domain" | notify -silent &> /dev/null
+    echo -e "Hii $(whoami),\nRecon completed for $domain.\nAll your outputs are saved in $(pwd).\n Thanks for using Garud" | notify -silent &> /dev/null
+}
+
+run_scans() {
+    scan_targets
+    makeFolders
+    run_subenum
+    run_info
+    run_params
+    run_gf
+    check_crlf
+    check_mail
+    check_ssti
+    check_lfi
+    check_nuclei
+    check_infoleak
+    check_sqli
+    check_xss
+    check_smuggle
+    check_open
+    final_bot
+    exit 1
+}
+
+while true
+do
+    load_colors
+    show_logo
+    run_scans
+done
